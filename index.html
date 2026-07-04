@@ -43,6 +43,15 @@
   .settings .row + .row { border-top: 1px solid #232a52; }
   .settings input { width: 100px; text-align: center; font-size: 15px; font-weight: 700; background: #0f1226; color: #ffd36b; border: 1px solid #2a3060; border-radius: 9px; padding: 7px; direction: ltr; }
 
+  .sync { background: #12183a; border: 1px solid #2a3060; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+  .sync-status { font-size: 13.5px; font-weight: 800; margin-bottom: 9px; text-align: center; }
+  .sync-row { display: flex; gap: 8px; }
+  .sync-row input { flex: 1; width: auto; text-align: center; font-size: 15px; font-weight: 700; background: #0f1226; color: #6be3a3; border: 1px solid #2a3060; border-radius: 9px; padding: 9px; direction: ltr; }
+  .sync-row button { border: none; border-radius: 9px; padding: 9px 16px; font-size: 14px; font-weight: 800; color: #fff; cursor: pointer; background: #4f8cff; white-space: nowrap; }
+  .sync-row button.on { background: #ff5d6c; }
+  .sync-row button:active { transform: scale(.96); }
+  .sync-hint { font-size: 11px; color: #9aa0c0; text-align: center; margin-top: 8px; line-height: 1.5; }
+
   .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 11px; }
   .card {
     background: linear-gradient(145deg, #1d2148, #161a38); border: 2px solid #2a3060;
@@ -104,6 +113,14 @@
   </div>
 
   <div class="settings" id="settings">
+    <div class="sync">
+      <div class="sync-status" id="syncStatus">🔴 غير متزامن (محلي فقط)</div>
+      <div class="sync-row">
+        <input id="syncCode" placeholder="رمز المزامنة">
+        <button id="syncBtn" onclick="toggleSync()">تفعيل</button>
+      </div>
+      <div class="sync-hint">اكتب نفس الرمز في كل أجهزتك عشان تتزامن بياناتك · اختر رمز صعب التخمين</div>
+    </div>
     <div class="row"><span>💵 سعر الدولار (ريال)</span><input id="set-usd" type="number" step="0.01" inputmode="decimal"></div>
     <div class="row"><span>🇶🇦 سعر الريال القطري (ريال)</span><input id="set-qar" type="number" step="0.01" inputmode="decimal"></div>
     <div class="row"><span>💳 رسوم الفرسان (٪)</span><input id="set-fee" type="number" step="0.1" inputmode="decimal"></div>
@@ -123,6 +140,8 @@
 
   <div class="toast" id="toast">تم ✅</div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script>
   // ===== الطرق =====
   const METHODS = {
@@ -157,8 +176,8 @@
   const tabsEl = document.getElementById('tabs');
 
   function fmt(n){ return (Math.round(n*100)/100).toLocaleString('en-US'); }
-  function save(){ localStorage.setItem('jard_products_v3', JSON.stringify(products)); }
-  function saveSettings(){ localStorage.setItem('jard_settings', JSON.stringify(settings)); }
+  function save(){ localStorage.setItem('jard_products_v3', JSON.stringify(products)); scheduleCloud(); }
+  function saveSettings(){ localStorage.setItem('jard_settings', JSON.stringify(settings)); scheduleCloud(); }
 
   // تكلفة الحبة الواحدة بالريال حسب الطريقة + تفاصيل الرسوم
   function pieceCost(p, mKey){
@@ -341,6 +360,101 @@
     try{ document.execCommand('copy'); toast('تم نسخ التقرير ✅'); }catch(e){ alert(text); }
     document.body.removeChild(ta);
   }
+
+  // ===== المزامنة السحابية (Firebase) =====
+  const firebaseConfig = {
+    apiKey: "AIzaSyDH0TXRVO6KHh0Z3w2yh4Ms6PA0zBfUrZ8",
+    authDomain: "jard-tiktok.firebaseapp.com",
+    databaseURL: "https://jard-tiktok-default-rtdb.firebaseio.com",
+    projectId: "jard-tiktok",
+    storageBucket: "jard-tiktok.firebasestorage.app",
+    messagingSenderId: "688924338181",
+    appId: "1:688924338181:web:c858dbe58b060ef3fbd46c"
+  };
+
+  let db = null;
+  try { firebase.initializeApp(firebaseConfig); db = firebase.database(); }
+  catch(e){ console.warn('Firebase init failed', e); }
+
+  let cloudRef = null;
+  let syncCode = localStorage.getItem('jard_sync_code') || '';
+  let applyingRemote = false;
+  let lastSynced = '';
+  let cloudTimer = null;
+
+  function setStatus(state){
+    const el = document.getElementById('syncStatus');
+    const btn = document.getElementById('syncBtn');
+    if(state === 'on'){
+      el.innerHTML = '🟢 متزامن — الرمز: <b style="direction:ltr;display:inline-block">' + syncCode + '</b>';
+      btn.textContent = 'إيقاف'; btn.classList.add('on');
+    } else if(state === 'connecting'){
+      el.textContent = '🟡 جاري الاتصال...';
+    } else {
+      el.textContent = '🔴 غير متزامن (محلي فقط)';
+      btn.textContent = 'تفعيل'; btn.classList.remove('on');
+    }
+  }
+
+  function scheduleCloud(){
+    if(applyingRemote || !cloudRef) return;
+    clearTimeout(cloudTimer);
+    cloudTimer = setTimeout(cloudPush, 500);
+  }
+  function cloudPush(){
+    if(!cloudRef) return;
+    lastSynced = JSON.stringify({ products, settings });
+    cloudRef.set({ products, settings, ts: Date.now() }).catch(err => {
+      toast('⚠️ تعذّر الحفظ السحابي'); console.warn(err);
+    });
+  }
+
+  function refreshSettingsInputs(){
+    const map = { 'set-usd':'usdRate', 'set-qar':'qarRate', 'set-fee':'feePct', 'set-vat':'vatPct' };
+    Object.keys(map).forEach(id => { const el = document.getElementById(id); if(el) el.value = settings[map[id]]; });
+  }
+
+  function connectSync(code){
+    if(!db){ toast('⚠️ خدمة المزامنة غير متاحة'); return; }
+    if(cloudRef){ cloudRef.off(); cloudRef = null; }
+    syncCode = code;
+    localStorage.setItem('jard_sync_code', code);
+    setStatus('connecting');
+    cloudRef = db.ref('jard/' + code);
+    cloudRef.on('value', snap => {
+      const val = snap.val();
+      if(!val){ cloudPush(); setStatus('on'); return; }      // السحابة فاضية → ارفع المحلي
+      const incoming = JSON.stringify({ products: val.products||[], settings: val.settings||settings });
+      const current  = JSON.stringify({ products, settings });
+      if(incoming === current || incoming === lastSynced){ setStatus('on'); return; } // نفس البيانات
+      applyingRemote = true;                                 // طبّق بيانات السحابة
+      if(val.products) products = val.products;
+      if(val.settings) settings = Object.assign({}, defSettings, val.settings);
+      localStorage.setItem('jard_products_v3', JSON.stringify(products));
+      localStorage.setItem('jard_settings', JSON.stringify(settings));
+      lastSynced = incoming;
+      refreshSettingsInputs(); render();
+      applyingRemote = false;
+      setStatus('on');
+    }, err => { console.warn(err); toast('⚠️ فشل الاتصال بالمزامنة'); setStatus('off'); });
+  }
+
+  function disconnectSync(){
+    if(cloudRef){ cloudRef.off(); cloudRef = null; }
+    localStorage.removeItem('jard_sync_code'); syncCode = ''; lastSynced = '';
+    setStatus('off');
+  }
+
+  function toggleSync(){
+    if(cloudRef){ disconnectSync(); toast('تم إيقاف المزامنة'); return; }
+    const code = (document.getElementById('syncCode').value || '').trim();
+    if(code.length < 4){ toast('اكتب رمز ٤ أحرف أو أكثر'); return; }
+    connectSync(code);
+    toast('✅ تم تفعيل المزامنة');
+  }
+
+  // اتصال تلقائي لو فيه رمز محفوظ
+  if(syncCode){ document.getElementById('syncCode').value = syncCode; connectSync(syncCode); }
 
   render();
 </script>
