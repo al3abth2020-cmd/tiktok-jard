@@ -4,115 +4,169 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>جرد تيك توك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --glass: rgba(255,255,255,0.07);
+    --glass-strong: rgba(255,255,255,0.11);
+    --stroke: rgba(255,255,255,0.14);
+    --gold: #ffd36b;
+    --green: #5fe3a1;
+    --blue: #6fa8ff;
+    --muted: #a6adcf;
+  }
   body {
-    margin: 0; font-family: -apple-system, "Segoe UI", Tahoma, sans-serif;
-    background: #0f1226; color: #fff; padding: 14px; padding-bottom: 175px;
+    margin: 0; font-family: 'Cairo', -apple-system, "Segoe UI", Tahoma, sans-serif;
+    color: #fff; padding: 16px; padding-bottom: 185px; min-height: 100vh;
+    background: linear-gradient(165deg, #0a0f2c 0%, #10163a 45%, #0c1130 100%);
+    overflow-x: hidden;
   }
-  h1 { text-align: center; font-size: 21px; margin: 4px 0 2px; }
-  .hint { text-align: center; color: #9aa0c0; font-size: 12.5px; margin-bottom: 12px; }
+  /* خلفيات زجاجية ملوّنة */
+  .blob { position: fixed; border-radius: 50%; filter: blur(70px); opacity: .55; z-index: 0; pointer-events: none; }
+  .b1 { width: 320px; height: 320px; background: #4f46e5; top: -80px; right: -60px; }
+  .b2 { width: 300px; height: 300px; background: #0ea5a4; bottom: 40px; left: -80px; opacity:.45; }
+  .b3 { width: 260px; height: 260px; background: #db2777; top: 40%; right: -100px; opacity:.35; }
+  .wrap, .totalbar, .toast { position: relative; z-index: 2; }
+  .wrap { max-width: 640px; margin: 0 auto; }
 
-  .home { position: absolute; top: 14px; right: 14px; text-decoration: none; color: #9aa0c0; background: #161a38; border: 1px solid #2a3060; border-radius: 12px; padding: 8px 12px; font-size: 13px; font-weight: 700; }
-  .home:active { transform: scale(.95); }
+  h1 { text-align: center; font-size: 25px; font-weight: 900; margin: 6px 0 2px; letter-spacing: -.5px;
+       background: linear-gradient(90deg,#fff,#cbd5ff); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .hint { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 16px; font-weight: 600; }
 
-  .wrap { max-width: 620px; margin: 0 auto; }
+  .glass {
+    background: var(--glass); backdrop-filter: blur(16px) saturate(150%); -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid var(--stroke); box-shadow: 0 8px 30px rgba(0,0,0,.28);
+  }
 
-  /* تبويبات الطرق */
-  .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+  /* تبويبات */
+  .tabs { display: flex; gap: 9px; margin-bottom: 14px; }
   .tab {
-    flex: 1; border: 2px solid #2a3060; background: #161a38; color: #9aa0c0;
-    border-radius: 14px; padding: 12px 6px; font-size: 14px; font-weight: 800;
-    cursor: pointer; transition: .15s; text-align: center; line-height: 1.4;
+    flex: 1; border-radius: 16px; padding: 13px 6px; font-size: 14px; font-weight: 800; cursor: pointer;
+    transition: .18s; text-align: center; line-height: 1.35; color: var(--muted);
+    background: var(--glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--stroke);
   }
-  .tab small { display: block; font-size: 10.5px; font-weight: 600; opacity: .8; }
-  .tab.active { color: #fff; border-color: #4f8cff; background: linear-gradient(145deg,#23306a,#1a2150); }
+  .tab .ic { font-size: 19px; display: block; margin-bottom: 2px; }
+  .tab small { display: block; font-size: 10.5px; font-weight: 600; opacity: .85; }
+  .tab.active { color: #fff; border-color: rgba(120,160,255,.6);
+    background: linear-gradient(160deg, rgba(99,102,241,.55), rgba(59,130,246,.35));
+    box-shadow: 0 8px 26px rgba(79,110,255,.35), inset 0 1px 0 rgba(255,255,255,.25); }
   .tab:active { transform: scale(.97); }
 
-  .toolbar { display: flex; gap: 8px; margin-bottom: 10px; }
-  .toolbar button { flex: 1; border: none; border-radius: 13px; padding: 13px 8px; font-size: 14.5px; font-weight: 800; cursor: pointer; color: #fff; }
-  .btn-copy { background: linear-gradient(145deg,#2bb673,#199e5e); }
-  .btn-add  { background: linear-gradient(145deg,#4f8cff,#3a6ddc); }
-  .btn-set  { flex: 0 0 52px; background: #2a3060; font-size: 18px; }
+  /* شريط الأدوات */
+  .toolbar { display: flex; gap: 9px; margin-bottom: 12px; flex-wrap: wrap; }
+  .toolbar button {
+    flex: 1 1 0; min-width: 0; border: 1px solid var(--stroke); border-radius: 15px; padding: 13px 8px;
+    font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer; color: #fff;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  }
+  .toolbar button svg { width: 18px; height: 18px; flex: 0 0 18px; }
+  .btn-copy { background: linear-gradient(160deg, rgba(43,182,115,.9), rgba(25,158,94,.75)); }
+  .btn-wa   { background: linear-gradient(160deg, rgba(37,211,102,.95), rgba(18,140,70,.8)); }
+  .btn-add  { background: linear-gradient(160deg, rgba(79,140,255,.9), rgba(58,109,220,.75)); }
+  .btn-set  { flex: 0 0 54px; background: var(--glass-strong); font-size: 19px; }
   .toolbar button:active { transform: scale(.96); }
 
   /* الإعدادات */
-  .settings { display: none; background: #161a38; border: 1px solid #2a3060; border-radius: 14px; padding: 12px; margin-bottom: 12px; }
+  .settings { display: none; border-radius: 18px; padding: 14px; margin-bottom: 14px; }
   .settings.open { display: block; }
-  .settings .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0; font-size: 13.5px; color: #cfd3ea; }
-  .settings .row + .row { border-top: 1px solid #232a52; }
-  .settings input { width: 100px; text-align: center; font-size: 15px; font-weight: 700; background: #0f1226; color: #ffd36b; border: 1px solid #2a3060; border-radius: 9px; padding: 7px; direction: ltr; }
+  .settings .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 2px; font-size: 13.5px; color: #dfe3ff; font-weight: 600; }
+  .settings .row + .row { border-top: 1px solid rgba(255,255,255,.08); }
+  .settings .row input { width: 104px; text-align: center; font-family: inherit; font-size: 15px; font-weight: 800; background: rgba(0,0,0,.25); color: var(--gold); border: 1px solid var(--stroke); border-radius: 11px; padding: 8px; direction: ltr; }
 
-  .sync { background: #12183a; border: 1px solid #2a3060; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
-  .sync-status { font-size: 13.5px; font-weight: 800; margin-bottom: 9px; text-align: center; }
+  .sync { border-radius: 15px; padding: 14px; margin-bottom: 14px; background: rgba(20,30,70,.5); border: 1px solid var(--stroke); }
+  .sync-status { font-size: 13.5px; font-weight: 800; margin-bottom: 11px; text-align: center; }
   .sync-row { display: flex; gap: 8px; }
-  .sync-row input { flex: 1; width: auto; text-align: center; font-size: 15px; font-weight: 700; background: #0f1226; color: #6be3a3; border: 1px solid #2a3060; border-radius: 9px; padding: 9px; direction: ltr; }
-  .sync-row button { border: none; border-radius: 9px; padding: 9px 16px; font-size: 14px; font-weight: 800; color: #fff; cursor: pointer; background: #4f8cff; white-space: nowrap; }
-  .sync-row button.on { background: #ff5d6c; }
+  .sync-row input { flex: 1; text-align: center; font-family: inherit; font-size: 15px; font-weight: 800; background: rgba(0,0,0,.25); color: var(--green); border: 1px solid var(--stroke); border-radius: 11px; padding: 10px; direction: ltr; }
+  .sync-row button { border: none; border-radius: 11px; padding: 10px 18px; font-family: inherit; font-size: 14px; font-weight: 800; color: #fff; cursor: pointer; background: linear-gradient(160deg,#4f8cff,#3a6ddc); white-space: nowrap; }
+  .sync-row button.on { background: linear-gradient(160deg,#ff6b78,#e0434f); }
   .sync-row button:active { transform: scale(.96); }
-  .sync-hint { font-size: 11px; color: #9aa0c0; text-align: center; margin-top: 8px; line-height: 1.5; }
+  .sync-hint { font-size: 11px; color: var(--muted); text-align: center; margin-top: 9px; line-height: 1.6; }
 
-  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 11px; }
+  /* البطاقات */
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .card {
-    background: linear-gradient(145deg, #1d2148, #161a38); border: 2px solid #2a3060;
-    border-radius: 17px; padding: 13px 11px 11px; text-align: center; cursor: pointer;
-    user-select: none; transition: transform .08s, border-color .2s; position: relative;
+    border-radius: 20px; padding: 14px 12px 12px; text-align: center; cursor: pointer;
+    user-select: none; transition: transform .1s, box-shadow .2s, border-color .2s; position: relative;
+    background: linear-gradient(160deg, rgba(255,255,255,.09), rgba(255,255,255,.04));
+    backdrop-filter: blur(16px) saturate(150%); -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid var(--stroke); box-shadow: 0 10px 30px rgba(0,0,0,.25);
   }
-  .card:active { transform: scale(.97); border-color: #4f8cff; }
+  .card:active { transform: scale(.97); border-color: rgba(120,160,255,.6); }
 
-  .name-input { width: 100%; text-align: center; font-size: 15.5px; font-weight: 800; background: transparent; color: #fff; border: none; border-bottom: 1px dashed #3a4080; padding: 4px 0 6px; margin-top: 16px; }
-  .name-input:focus { outline: none; border-bottom-color: #4f8cff; }
+  .name-input { width: 100%; text-align: center; font-family: inherit; font-size: 15.5px; font-weight: 800; background: transparent; color: #fff; border: none; border-bottom: 1px dashed rgba(255,255,255,.22); padding: 4px 0 7px; margin-top: 18px; }
+  .name-input:focus { outline: none; border-bottom-color: var(--blue); }
 
-  .row2 { display: flex; gap: 6px; margin: 8px 0 4px; }
+  .row2 { display: flex; gap: 7px; margin: 9px 0 5px; }
   .field { flex: 1; }
-  .field label { display: block; font-size: 10px; color: #9aa0c0; margin-bottom: 3px; }
-  .field input { width: 100%; text-align: center; font-size: 15px; font-weight: 800; border: 1px solid #2a3060; border-radius: 8px; padding: 6px 2px; direction: ltr; background: #0f1226; }
-  .field .v { color: #ffd36b; }
-  .field .p { color: #6be3a3; }
+  .field label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 4px; font-weight: 700; }
+  .field input { width: 100%; text-align: center; font-family: inherit; font-size: 15px; font-weight: 800; border: 1px solid var(--stroke); border-radius: 10px; padding: 7px 2px; direction: ltr; background: rgba(0,0,0,.28); }
+  .field .v { color: var(--gold); }
+  .field .p { color: var(--green); }
 
-  .sar-each { font-size: 11.5px; color: #9aa0c0; direction: rtl; min-height: 15px; margin-top: 2px; }
-  .sar-each b { color: #cfd3ea; direction: ltr; display: inline-block; }
+  .sar-each { font-size: 11.5px; color: var(--muted); direction: rtl; min-height: 15px; margin-top: 3px; font-weight: 600; }
+  .sar-each b { color: #e6eaff; direction: ltr; display: inline-block; }
   .fee-note { color: #ffb36b; font-size: 10.5px; }
 
-  .card .count { margin-top: 8px; font-size: 16px; font-weight: 800; background: #4f8cff; color: #fff; border-radius: 11px; padding: 9px 0; }
-  .card .subtotal { margin-top: 6px; font-size: 14px; font-weight: 800; color: #6be3a3; direction: rtl; min-height: 18px; }
+  .card .count { margin-top: 9px; font-size: 16px; font-weight: 800; border-radius: 13px; padding: 10px 0; color: #fff;
+    background: linear-gradient(160deg, rgba(79,140,255,.9), rgba(58,109,220,.7)); box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
+  .card .subtotal { margin-top: 7px; font-size: 14px; font-weight: 800; color: var(--green); direction: rtl; min-height: 18px; }
 
-  .minus, .del { position: absolute; top: 8px; width: 29px; height: 29px; border-radius: 50%; border: none; color: #fff; font-weight: 700; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-  .minus { left: 8px; background: #ff5d6c; font-size: 19px; }
-  .del { right: 8px; background: #5a4060; font-size: 15px; }
+  .minus, .del { position: absolute; top: 9px; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--stroke); color: #fff; font-weight: 700; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(6px); }
+  .minus { left: 9px; background: rgba(255,93,108,.85); font-size: 20px; }
+  .del { right: 9px; background: rgba(120,80,140,.6); font-size: 14px; }
   .minus:active, .del:active { transform: scale(.9); }
 
-  .add-card { border: 2px dashed #3a4080; background: transparent; border-radius: 17px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9aa0c0; cursor: pointer; min-height: 130px; font-weight: 700; }
+  .add-card { border: 1.5px dashed rgba(255,255,255,.22); background: rgba(255,255,255,.03); border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--muted); cursor: pointer; min-height: 140px; font-weight: 800; gap: 4px; }
   .add-card:active { transform: scale(.97); }
-  .add-card .plus { font-size: 32px; line-height: 1; }
+  .add-card .plus { font-size: 34px; line-height: 1; }
 
-  .totalbar { position: fixed; bottom: 0; right: 0; left: 0; background: #161a38; border-top: 2px solid #2a3060; padding: 11px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-  .totalbar .grand { font-size: 23px; font-weight: 900; color: #6be3a3; direction: rtl; }
+  .totalbar { position: fixed; bottom: 0; right: 0; left: 0; padding: 13px 18px calc(13px + env(safe-area-inset-bottom));
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    background: rgba(12,18,45,.72); backdrop-filter: blur(22px) saturate(160%); -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border-top: 1px solid var(--stroke); border-radius: 24px 24px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,.35); z-index: 40; }
+  .totalbar .grand { font-size: 25px; font-weight: 900; color: var(--green); direction: rtl; }
   .totalbar .grand b { direction: ltr; display: inline-block; }
-  .totalbar .grand small { font-size: 12px; color: #9aa0c0; font-weight: 600; }
-  .totalbar .sub { font-size: 11.5px; color: #9aa0c0; margin-top: 3px; direction: rtl; }
-  .totalbar .sub b { direction: ltr; display: inline-block; color: #cfd3ea; }
-  .reset { background: #2a3060; color: #fff; border: none; border-radius: 12px; padding: 11px 14px; font-size: 13.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .totalbar .grand small { font-size: 12px; color: var(--muted); font-weight: 700; }
+  .totalbar .sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; direction: rtl; font-weight: 600; }
+  .totalbar .sub b { direction: ltr; display: inline-block; color: #e6eaff; }
+  .reset { background: var(--glass-strong); color: #fff; border: 1px solid var(--stroke); border-radius: 14px; padding: 12px 15px; font-family: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer; white-space: nowrap; }
   .reset:active { transform: scale(.95); }
 
-  .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #199e5e; color: #fff; padding: 12px 22px; border-radius: 30px; font-weight: 700; font-size: 15px; opacity: 0; pointer-events: none; transition: opacity .25s, bottom .25s; z-index: 50; }
-  .toast.show { opacity: 1; bottom: 100px; }
+  .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(25,158,94,.95); color: #fff; padding: 13px 24px; border-radius: 30px; font-weight: 800; font-size: 15px; opacity: 0; pointer-events: none; transition: opacity .25s, bottom .25s; z-index: 60; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.2); }
+  .toast.show { opacity: 1; bottom: 112px; }
 </style>
 </head>
 <body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+
 <div class="wrap">
   <h1>🧮 جرد تيك توك</h1>
-  <div class="hint">اختر طريقة الشحن فوق · اضغط على المنتج لزيادة العدد</div>
+  <div class="hint">اختر طريقة الشحن · اضغط على المنتج لزيادة العدد</div>
 
   <div class="tabs" id="tabs"></div>
 
   <div class="toolbar">
-    <button class="btn-copy" onclick="copyReport()">📋 نسخ التقرير</button>
-    <button class="btn-add" onclick="addProduct()">➕ منتج</button>
+    <button class="btn-copy" onclick="copyReport()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+      نسخ
+    </button>
+    <button class="btn-wa" onclick="shareWhatsApp()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2 22l5.3-1.38a9.9 9.9 0 0 0 4.73 1.2h.01c5.46 0 9.9-4.44 9.9-9.9 0-2.64-1.03-5.13-2.9-7A9.82 9.82 0 0 0 12.04 2Zm5.8 14.13c-.24.68-1.42 1.32-1.95 1.36-.5.05-.98.24-3.32-.68-2.8-1.1-4.6-3.96-4.74-4.15-.14-.19-1.13-1.5-1.13-2.86 0-1.37.72-2.04.97-2.32.24-.28.53-.35.71-.35.18 0 .36 0 .51.01.16.01.38-.06.6.46.24.55.8 1.92.87 2.06.07.14.12.3.02.48-.09.19-.14.3-.28.47-.14.16-.29.36-.42.48-.14.14-.28.29-.12.57.16.28.72 1.18 1.54 1.91 1.06.94 1.95 1.24 2.23 1.38.28.14.44.12.6-.07.16-.19.69-.8.87-1.08.18-.28.36-.23.6-.14.24.09 1.55.73 1.81.86.28.14.46.21.53.32.07.12.07.66-.17 1.34Z"/></svg>
+      واتساب
+    </button>
+    <button class="btn-add" onclick="addProduct()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      منتج
+    </button>
     <button class="btn-set" onclick="toggleSettings()">⚙️</button>
   </div>
 
-  <div class="settings" id="settings">
+  <div class="settings glass" id="settings">
     <div class="sync">
       <div class="sync-status" id="syncStatus">🔴 غير متزامن (محلي فقط)</div>
       <div class="sync-row">
@@ -145,9 +199,9 @@
 <script>
   // ===== الطرق =====
   const METHODS = {
-    usd:    { label: '💵 دولار',     hint: 'بالدولار',     cur: '$',    priceKey: 'priceUsd', rateKey: 'usdRate', fee: false },
-    forsan: { label: '💳 الفرسان',   hint: 'دولار + رسوم', cur: '$',    priceKey: 'priceUsd', rateKey: 'usdRate', fee: true  },
-    qatar:  { label: '🇶🇦 قطر',      hint: 'ريال قطري',    cur: 'ر.ق',  priceKey: 'priceQar', rateKey: 'qarRate', fee: false }
+    usd:    { label: '💵 دولار',   ic:'💵', hint: 'بالدولار',     cur: '$',    priceKey: 'priceUsd', rateKey: 'usdRate', fee: false },
+    forsan: { label: '💳 الفرسان', ic:'💳', hint: 'دولار + رسوم', cur: '$',    priceKey: 'priceUsd', rateKey: 'usdRate', fee: true  },
+    qatar:  { label: '🇶🇦 قطر',    ic:'🇶🇦', hint: 'ريال قطري',    cur: 'ر.ق',  priceKey: 'priceQar', rateKey: 'qarRate', fee: false }
   };
 
   // ===== الإعدادات =====
@@ -179,7 +233,6 @@
   function save(){ localStorage.setItem('jard_products_v3', JSON.stringify(products)); scheduleCloud(); }
   function saveSettings(){ localStorage.setItem('jard_settings', JSON.stringify(settings)); scheduleCloud(); }
 
-  // تكلفة الحبة الواحدة بالريال حسب الطريقة + تفاصيل الرسوم
   function pieceCost(p, mKey){
     const m = METHODS[mKey];
     const price = p[m.priceKey] || 0;
@@ -194,20 +247,18 @@
     return { base, extra, total: base + extra };
   }
 
-  // ===== التبويبات =====
   function renderTabs(){
     tabsEl.innerHTML = '';
     Object.keys(METHODS).forEach(k => {
       const m = METHODS[k];
       const b = document.createElement('button');
       b.className = 'tab' + (k===active ? ' active' : '');
-      b.innerHTML = m.label + '<small>' + m.hint + '</small>';
+      b.innerHTML = '<span class="ic">' + m.ic + '</span>' + m.label.replace(/^\S+\s/,'') + '<small>' + m.hint + '</small>';
       b.onclick = () => { active = k; localStorage.setItem('jard_active', k); render(); };
       tabsEl.appendChild(b);
     });
   }
 
-  // ===== البطاقات =====
   function render(){
     renderTabs();
     const m = METHODS[active];
@@ -325,7 +376,7 @@
   // ===== التقرير =====
   function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
 
-  function copyReport(){
+  function buildReport(){
     const now = new Date();
     const date = now.toLocaleDateString('ar-EG') + ' - ' + now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
     let lines = ['🧮 جرد تيك توك', '📅 ' + date];
@@ -350,10 +401,18 @@
     lines.push('━━━━━━━━━━━');
     lines.push('🔢 إجمالي القطع: ' + fmt(allPieces));
     lines.push('💰 الإجمالي الكلي: ' + fmt(allSar) + ' ريال');
-    const text = lines.join('\n');
+    return lines.join('\n');
+  }
+
+  function copyReport(){
+    const text = buildReport();
     if(navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(text).then(()=>toast('تم نسخ التقرير ✅')).catch(()=>fallbackCopy(text));
     } else fallbackCopy(text);
+  }
+  function shareWhatsApp(){
+    const text = buildReport();
+    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
   }
   function fallbackCopy(text){
     const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select();
@@ -423,11 +482,11 @@
     cloudRef = db.ref('jard/' + code);
     cloudRef.on('value', snap => {
       const val = snap.val();
-      if(!val){ cloudPush(); setStatus('on'); return; }      // السحابة فاضية → ارفع المحلي
+      if(!val){ cloudPush(); setStatus('on'); return; }
       const incoming = JSON.stringify({ products: val.products||[], settings: val.settings||settings });
       const current  = JSON.stringify({ products, settings });
-      if(incoming === current || incoming === lastSynced){ setStatus('on'); return; } // نفس البيانات
-      applyingRemote = true;                                 // طبّق بيانات السحابة
+      if(incoming === current || incoming === lastSynced){ setStatus('on'); return; }
+      applyingRemote = true;
       if(val.products) products = val.products;
       if(val.settings) settings = Object.assign({}, defSettings, val.settings);
       localStorage.setItem('jard_products_v3', JSON.stringify(products));
@@ -453,7 +512,6 @@
     toast('✅ تم تفعيل المزامنة');
   }
 
-  // اتصال تلقائي لو فيه رمز محفوظ
   if(syncCode){ document.getElementById('syncCode').value = syncCode; connectSync(syncCode); }
 
   render();
